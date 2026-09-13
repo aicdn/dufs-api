@@ -22,15 +22,8 @@
             box-shadow: 0 4px 20px rgba(0,0,0,0.15);
         }
         
-        .header h1 {
-            font-size: 2rem;
-            margin-bottom: 10px;
-        }
-        
-        .header p {
-            opacity: 0.9;
-            font-size: 1rem;
-        }
+        .header h1 { font-size: 2rem; margin-bottom: 10px; }
+        .header p { opacity: 0.9; font-size: 1rem; }
         
         .container {
             max-width: 1200px;
@@ -58,9 +51,7 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
         
-        .tab:hover {
-            background: #f0f0f0;
-        }
+        .tab:hover { background: #f0f0f0; }
         
         .tab.active {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -83,9 +74,7 @@
             transition: border-color 0.3s;
         }
         
-        .search-box input:focus {
-            border-color: #667eea;
-        }
+        .search-box input:focus { border-color: #667eea; }
         
         .search-box button {
             padding: 12px 24px;
@@ -122,9 +111,7 @@
             transition: color 0.2s;
         }
         
-        .breadcrumb span:hover {
-            color: #667eea;
-        }
+        .breadcrumb span:hover { color: #667eea; }
         
         .breadcrumb span:last-child {
             color: #333;
@@ -132,14 +119,8 @@
             cursor: default;
         }
         
-        .breadcrumb .sep {
-            color: #ccc;
-            cursor: default;
-        }
-        
-        .breadcrumb .sep:hover {
-            color: #ccc;
-        }
+        .breadcrumb .sep { color: #ccc; cursor: default; }
+        .breadcrumb .sep:hover { color: #ccc; }
         
         .file-list {
             background: white;
@@ -157,13 +138,8 @@
             cursor: pointer;
         }
         
-        .file-item:last-child {
-            border-bottom: none;
-        }
-        
-        .file-item:hover {
-            background: #f8f9ff;
-        }
+        .file-item:last-child { border-bottom: none; }
+        .file-item:hover { background: #f8f9ff; }
         
         .file-icon {
             width: 40px;
@@ -175,18 +151,10 @@
             font-size: 1.5rem;
         }
         
-        .file-icon.folder {
-            color: #ffc107;
-        }
+        .file-icon.folder { color: #ffc107; }
+        .file-icon.file { color: #667eea; }
         
-        .file-icon.file {
-            color: #667eea;
-        }
-        
-        .file-info {
-            flex: 1;
-            min-width: 0;
-        }
+        .file-info { flex: 1; min-width: 0; }
         
         .file-name {
             font-weight: 500;
@@ -197,12 +165,9 @@
             text-overflow: ellipsis;
         }
         
-        .file-path {
+        .file-meta {
             font-size: 0.85rem;
             color: #999;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
         
         .file-actions {
@@ -223,9 +188,7 @@
             transition: background 0.2s;
         }
         
-        .btn-download:hover {
-            background: #218838;
-        }
+        .btn-download:hover { background: #218838; }
         
         .loading {
             text-align: center;
@@ -245,9 +208,7 @@
             animation: spin 1s linear infinite;
         }
         
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
         
         .error {
             text-align: center;
@@ -325,7 +286,7 @@
     
     <script>
         const API_BASE = 'https://dufs.api.posw.cn';
-        const SERVERS = {
+        const DUF_SERVERS = {
             'xz.posw.cn': 'https://xz.posw.cn',
             'xz.pcpos.cn': 'https://xz.pcpos.cn'
         };
@@ -372,8 +333,8 @@
             
             parts.forEach((part, i) => {
                 path += '/' + part;
-                html += `<span class="sep">/</span>`;
-                html += `<span data-path="${path}">${part}</span>`;
+                html += '<span class="sep">/</span>';
+                html += '<span data-path="' + path + '">' + part + '</span>';
             });
             
             breadcrumb.innerHTML = html;
@@ -393,20 +354,24 @@
             
             const ext = name.split('.').pop().toLowerCase();
             const icons = {
-                'mp4': '🎬', 'mkv': '🎬', 'avi': '🎬', 'mov': '🎬', 'wmv': '🎬',
-                'mp3': '🎵', 'wav': '🎵', 'flac': '🎵', 'aac': '🎵',
-                'jpg': '🖼️', 'jpeg': '🖼️', 'png': '🖼️', 'gif': '🖼️', 'webp': '🖼️',
+                'mp4': '🎬', 'mkv': '🎬', 'avi': '🎬', 'mov': '🎬',
+                'mp3': '🎵', 'wav': '🎵', 'flac': '🎵',
+                'jpg': '🖼️', 'jpeg': '🖼️', 'png': '🖼️', 'gif': '🖼️',
                 'pdf': '📄', 'doc': '📄', 'docx': '📄', 'txt': '📄',
-                'zip': '📦', 'rar': '📦', '7z': '📦', 'tar': '📦', 'gz': '📦',
-                'exe': '⚙️', 'msi': '⚙️', 'dmg': '⚙️',
-                'iso': '💿', 'img': '💿'
+                'zip': '📦', 'rar': '📦', '7z': '📦',
+                'exe': '⚙️', 'msi': '⚙️', 'apk': '📱', 'dmg': '⚙️',
+                'iso': '💿'
             };
             
             return icons[ext] || '📄';
         }
         
-        function formatSize(name, isDir) {
-            return isDir ? '文件夹' : '';
+        function formatSize(bytes) {
+            if (!bytes) return '';
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+            return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
         }
         
         async function loadFiles() {
@@ -415,9 +380,9 @@
             fileList.innerHTML = '<div class="loading">加载中...</div>';
             stats.textContent = '';
             
-            let url = `${API_BASE}/files?path=${encodeURIComponent(currentPath)}`;
+            let url = API_BASE + '/files?server=' + encodeURIComponent(currentServer) + '&path=' + encodeURIComponent(currentPath);
             if (searchQuery) {
-                url += `&q=${encodeURIComponent(searchQuery)}`;
+                url += '&q=' + encodeURIComponent(searchQuery);
             }
             
             try {
@@ -431,9 +396,9 @@
                 let files = data.files || [];
                 
                 if (searchQuery) {
-                    stats.textContent = `找到 ${files.length} 个结果`;
+                    stats.textContent = '找到 ' + files.length + ' 个结果';
                 } else {
-                    stats.textContent = `共 ${files.length} 项`;
+                    stats.textContent = '共 ' + files.length + ' 项';
                 }
                 
                 if (files.length === 0) {
@@ -449,26 +414,29 @@
                 let html = '';
                 files.forEach(file => {
                     const icon = getFileIcon(file.name, file.isDir);
-                    const serverUrl = SERVERS[currentServer];
-                    const downloadUrl = `${serverUrl}/${file.path.replace(/^\//, '')}`;
+                    const serverUrl = DUF_SERVERS[currentServer];
+                    const downloadUrl = serverUrl + '/' + file.path.replace(/^\//, '');
                     
-                    html += `
-                        <div class="file-item" onclick="${file.isDir ? `navigateTo('${file.path}')` : `window.open('${downloadUrl}', '_blank')`}">
-                            <div class="file-icon ${file.isDir ? 'folder' : 'file'}">${icon}</div>
-                            <div class="file-info">
-                                <div class="file-name">${file.name}</div>
-                                <div class="file-path">${file.path}</div>
-                            </div>
-                            <div class="file-actions">
-                                <a href="${downloadUrl}" target="_blank" class="btn-download" onclick="event.stopPropagation()">下载</a>
-                            </div>
-                        </div>
-                    `;
+                    const sizeStr = file.isDir ? '文件夹' : formatSize(file.size);
+                    const clickAction = file.isDir 
+                        ? 'navigateTo(\'' + file.path + '\')' 
+                        : 'window.open(\'' + downloadUrl + '\', \'_blank\')';
+                    
+                    html += '<div class="file-item" onclick="' + clickAction + '">';
+                    html += '<div class="file-icon ' + (file.isDir ? 'folder' : 'file') + '">' + icon + '</div>';
+                    html += '<div class="file-info">';
+                    html += '<div class="file-name">' + file.name + '</div>';
+                    html += '<div class="file-meta">' + sizeStr + '</div>';
+                    html += '</div>';
+                    html += '<div class="file-actions">';
+                    html += '<a href="' + downloadUrl + '" target="_blank" class="btn-download" onclick="event.stopPropagation()">下载</a>';
+                    html += '</div>';
+                    html += '</div>';
                 });
                 
                 fileList.innerHTML = html;
             } catch (error) {
-                fileList.innerHTML = `<div class="error">加载失败: ${error.message}</div>`;
+                fileList.innerHTML = '<div class="error">加载失败: ' + error.message + '</div>';
             }
         }
         
