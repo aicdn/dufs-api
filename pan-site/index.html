@@ -285,8 +285,7 @@
     </div>
     
     <script>
-        const API_BASE = 'https://dufs.api.posw.cn';
-        const DUF_SERVERS = {
+        const SERVERS = {
             'xz.posw.cn': 'https://xz.posw.cn',
             'xz.pcpos.cn': 'https://xz.pcpos.cn'
         };
@@ -367,7 +366,7 @@
         }
         
         function formatSize(bytes) {
-            if (!bytes) return '';
+            if (!bytes && bytes !== 0) return '';
             if (bytes < 1024) return bytes + ' B';
             if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
             if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
@@ -380,20 +379,33 @@
             fileList.innerHTML = '<div class="loading">加载中...</div>';
             stats.textContent = '';
             
-            let url = API_BASE + '/files?server=' + encodeURIComponent(currentServer) + '&path=' + encodeURIComponent(currentPath);
+            const baseUrl = SERVERS[currentServer];
+            let url = baseUrl + '/?json';
+            
+            if (currentPath !== '/') {
+                url = baseUrl + '/' + currentPath.replace(/^\//, '').replace(/\/$/, '') + '/?json';
+            }
+            
             if (searchQuery) {
                 url += '&q=' + encodeURIComponent(searchQuery);
             }
             
             try {
                 const response = await fetch(url);
-                const data = await response.json();
+                const text = await response.text();
+                
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    throw new Error('服务器返回数据格式错误');
+                }
                 
                 if (data.error) {
                     throw new Error(data.error);
                 }
                 
-                let files = data.files || [];
+                let files = data.paths || [];
                 
                 if (searchQuery) {
                     stats.textContent = '找到 ' + files.length + ' 个结果';
@@ -407,23 +419,24 @@
                 }
                 
                 files.sort((a, b) => {
-                    if (a.isDir !== b.isDir) return b.isDir - a.isDir;
+                    if (a.path_type !== b.path_type) return b.path_type === 'Dir' ? 1 : -1;
                     return a.name.localeCompare(b.name);
                 });
                 
                 let html = '';
                 files.forEach(file => {
-                    const icon = getFileIcon(file.name, file.isDir);
-                    const serverUrl = DUF_SERVERS[currentServer];
-                    const downloadUrl = serverUrl + '/' + file.path.replace(/^\//, '');
+                    const isDir = file.path_type === 'Dir';
+                    const icon = getFileIcon(file.name, isDir);
+                    const filePath = currentPath === '/' ? '/' + file.name : currentPath + '/' + file.name;
+                    const downloadUrl = baseUrl + filePath;
                     
-                    const sizeStr = file.isDir ? '文件夹' : formatSize(file.size);
-                    const clickAction = file.isDir 
-                        ? 'navigateTo(\'' + file.path + '\')' 
+                    const sizeStr = isDir ? '文件夹' : formatSize(file.size);
+                    const clickAction = isDir 
+                        ? 'navigateTo(\'' + filePath + '/\')' 
                         : 'window.open(\'' + downloadUrl + '\', \'_blank\')';
                     
                     html += '<div class="file-item" onclick="' + clickAction + '">';
-                    html += '<div class="file-icon ' + (file.isDir ? 'folder' : 'file') + '">' + icon + '</div>';
+                    html += '<div class="file-icon ' + (isDir ? 'folder' : 'file') + '">' + icon + '</div>';
                     html += '<div class="file-info">';
                     html += '<div class="file-name">' + file.name + '</div>';
                     html += '<div class="file-meta">' + sizeStr + '</div>';
