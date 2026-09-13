@@ -18,8 +18,57 @@ app.get('/', (req, res) => {
     name: 'Dufs API',
     version: '1.0.0',
     servers: Object.keys(DUFS_SERVERS),
-    usage: '/files?server=xz.posw.cn&path=/'
+    usage: '/files?server=xz.posw.cn&path=/',
+    debug: '/debug?server=xz.posw.cn&path=/'
   });
+});
+
+app.get('/debug', async (req, res) => {
+  const { server = 'xz.posw.cn', path = '/' } = req.query;
+  const baseUrl = DUFS_SERVERS[server];
+  
+  const logs = [];
+  logs.push({ step: '1. 开始调试', time: new Date().toISOString() });
+  logs.push({ step: '2. 服务器配置', server, baseUrl, path });
+  
+  if (!baseUrl) {
+    logs.push({ step: '3. 错误: 未知服务器', error: `Unknown server: ${server}` });
+    return res.json({ success: false, logs });
+  }
+  
+  let url = `${baseUrl}/${path.replace(/^\//, '').replace(/\/$/, '')}`;
+  logs.push({ step: '3. 请求URL', url });
+  
+  try {
+    logs.push({ step: '4. 发送请求...', time: new Date().toISOString() });
+    const response = await fetch(url);
+    logs.push({ step: '5. 收到响应', status: response.status, statusText: response.statusText });
+    
+    const text = await response.text();
+    logs.push({ step: '6. 响应内容长度', length: text.length });
+    logs.push({ step: '7. 响应前200字符', preview: text.substring(0, 200) });
+    
+    if (!response.ok) {
+      logs.push({ step: '8. 错误: HTTP状态码非200', error: response.statusText });
+      return res.json({ success: false, logs });
+    }
+    
+    let data;
+    try {
+      data = JSON.parse(text);
+      logs.push({ step: '8. JSON解析成功', keys: Object.keys(data) });
+      logs.push({ step: '9. paths数组', count: (data.paths || []).length });
+    } catch (e) {
+      logs.push({ step: '8. 错误: JSON解析失败', error: e.message });
+      return res.json({ success: false, logs });
+    }
+    
+    logs.push({ step: '10. 完成', time: new Date().toISOString() });
+    res.json({ success: true, logs, data });
+  } catch (error) {
+    logs.push({ step: '错误', error: error.message, stack: error.stack });
+    res.json({ success: false, logs });
+  }
 });
 
 app.get('/files', async (req, res) => {
@@ -47,16 +96,13 @@ app.get('/files', async (req, res) => {
       url += `?${queryString}`;
     }
     
-    console.log('Fetching:', url);
-    
     const response = await fetch(url);
     const text = await response.text();
     
-    console.log('Response status:', response.status);
-    
     if (!response.ok) {
       return res.status(response.status).json({
-        error: `Dufs server error: ${response.statusText}`
+        error: `Dufs server error: ${response.statusText}`,
+        debug: { url, status: response.status, body: text.substring(0, 500) }
       });
     }
     
@@ -65,7 +111,8 @@ app.get('/files', async (req, res) => {
       data = JSON.parse(text);
     } catch (e) {
       return res.status(500).json({
-        error: 'Invalid JSON from dufs server'
+        error: 'Invalid JSON from dufs server',
+        debug: { url, body: text.substring(0, 500) }
       });
     }
     
@@ -84,7 +131,6 @@ app.get('/files', async (req, res) => {
       total: files.length
     });
   } catch (error) {
-    console.error('Error:', error.message);
     res.status(503).json({
       error: `Cannot connect to dufs server: ${error.message}`
     });

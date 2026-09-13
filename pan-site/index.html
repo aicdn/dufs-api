@@ -93,6 +93,15 @@
             box-shadow: 0 4px 12px rgba(102,126,234,0.4);
         }
         
+        .btn-debug {
+            background: #6c757d;
+        }
+        
+        .btn-debug:hover {
+            background: #5a6268;
+            box-shadow: 0 4px 12px rgba(108,117,125,0.4);
+        }
+        
         .breadcrumb {
             display: flex;
             align-items: center;
@@ -234,6 +243,38 @@
             font-size: 0.9rem;
         }
         
+        .debug-panel {
+            display: none;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .debug-panel.show { display: block; }
+        
+        .debug-panel h3 {
+            color: #569cd6;
+            margin-bottom: 15px;
+            font-size: 1rem;
+        }
+        
+        .debug-log {
+            margin-bottom: 8px;
+            padding: 8px;
+            background: #2d2d2d;
+            border-radius: 4px;
+        }
+        
+        .debug-log .step { color: #4ec9b0; }
+        .debug-log .error { color: #f44747; }
+        .debug-log .success { color: #6a9955; }
+        
         .footer {
             text-align: center;
             padding: 30px 20px;
@@ -267,6 +308,7 @@
         <div class="search-box">
             <input type="text" id="searchInput" placeholder="搜索文件...">
             <button id="searchBtn">搜索</button>
+            <button id="debugBtn" class="btn-debug">调试</button>
         </div>
         
         <div class="breadcrumb" id="breadcrumb">
@@ -277,6 +319,11 @@
         
         <div class="file-list" id="fileList">
             <div class="loading">加载中...</div>
+        </div>
+        
+        <div class="debug-panel" id="debugPanel">
+            <h3>调试信息</h3>
+            <div id="debugLogs"></div>
         </div>
     </div>
     
@@ -298,9 +345,12 @@
         const tabs = document.querySelectorAll('.tab');
         const searchInput = document.getElementById('searchInput');
         const searchBtn = document.getElementById('searchBtn');
+        const debugBtn = document.getElementById('debugBtn');
         const breadcrumb = document.getElementById('breadcrumb');
         const fileList = document.getElementById('fileList');
         const stats = document.getElementById('stats');
+        const debugPanel = document.getElementById('debugPanel');
+        const debugLogs = document.getElementById('debugLogs');
         
         tabs.forEach(tab => {
             tab.addEventListener('click', () => {
@@ -325,6 +375,8 @@
                 loadFiles();
             }
         });
+        
+        debugBtn.addEventListener('click', runDebug);
         
         function updateBreadcrumb() {
             const parts = currentPath.split('/').filter(Boolean);
@@ -393,7 +445,7 @@
                 try {
                     data = JSON.parse(text);
                 } catch (e) {
-                    throw new Error('API 返回数据格式错误');
+                    throw new Error('API 返回数据格式错误: ' + text.substring(0, 200));
                 }
                 
                 if (data.error) {
@@ -444,6 +496,50 @@
                 fileList.innerHTML = html;
             } catch (error) {
                 fileList.innerHTML = '<div class="error">加载失败: ' + error.message + '</div>';
+            }
+        }
+        
+        async function runDebug() {
+            debugPanel.classList.add('show');
+            debugLogs.innerHTML = '<div class="debug-log"><span class="step">开始调试...</span></div>';
+            
+            const url = API_BASE + '/debug?server=' + encodeURIComponent(currentServer) + '&path=' + encodeURIComponent(currentPath);
+            
+            try {
+                const response = await fetch(url);
+                const text = await response.text();
+                
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    debugLogs.innerHTML = '<div class="debug-log"><span class="error">API 返回非 JSON: ' + text.substring(0, 500) + '</span></div>';
+                    return;
+                }
+                
+                let html = '';
+                if (data.logs) {
+                    data.logs.forEach(log => {
+                        let content = '<span class="step">' + log.step + '</span>';
+                        if (log.error) content += ' <span class="error">' + log.error + '</span>';
+                        if (log.url) content += ' URL: ' + log.url;
+                        if (log.status) content += ' 状态: ' + log.status;
+                        if (log.preview) content += ' 内容: ' + log.preview;
+                        if (log.count !== undefined) content += ' 数量: ' + log.count;
+                        if (log.keys) content += ' 字段: ' + log.keys.join(', ');
+                        html += '<div class="debug-log">' + content + '</div>';
+                    });
+                }
+                
+                if (data.success) {
+                    html += '<div class="debug-log"><span class="success">✓ 调试成功</span></div>';
+                } else {
+                    html += '<div class="debug-log"><span class="error">✗ 调试失败</span></div>';
+                }
+                
+                debugLogs.innerHTML = html;
+            } catch (error) {
+                debugLogs.innerHTML = '<div class="debug-log"><span class="error">请求失败: ' + error.message + '</span></div>';
             }
         }
         
