@@ -3,5 +3,11 @@
   "version": "1.0.0",
   "description": "Dufs file server API proxy",
   "mainlandRegions": ["ap-beijing"],
-  "overseasRegions": ["ap-tokyo"]
+  "overseasRegions": ["ap-tokyo"],
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/index.html"
+    }
+  ]
 }
