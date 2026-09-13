@@ -285,7 +285,8 @@
     </div>
     
     <script>
-        const SERVERS = {
+        const API_BASE = 'https://dufs.api.posw.cn';
+        const DUF_SERVERS = {
             'xz.posw.cn': 'https://xz.posw.cn',
             'xz.pcpos.cn': 'https://xz.pcpos.cn'
         };
@@ -379,13 +380,7 @@
             fileList.innerHTML = '<div class="loading">加载中...</div>';
             stats.textContent = '';
             
-            const baseUrl = SERVERS[currentServer];
-            let url = baseUrl + '/?json';
-            
-            if (currentPath !== '/') {
-                url = baseUrl + '/' + currentPath.replace(/^\//, '').replace(/\/$/, '') + '/?json';
-            }
-            
+            let url = API_BASE + '/files?server=' + encodeURIComponent(currentServer) + '&path=' + encodeURIComponent(currentPath);
             if (searchQuery) {
                 url += '&q=' + encodeURIComponent(searchQuery);
             }
@@ -398,14 +393,14 @@
                 try {
                     data = JSON.parse(text);
                 } catch (e) {
-                    throw new Error('服务器返回数据格式错误');
+                    throw new Error('API 返回数据格式错误');
                 }
                 
                 if (data.error) {
                     throw new Error(data.error);
                 }
                 
-                let files = data.paths || [];
+                let files = data.files || [];
                 
                 if (searchQuery) {
                     stats.textContent = '找到 ' + files.length + ' 个结果';
@@ -419,24 +414,23 @@
                 }
                 
                 files.sort((a, b) => {
-                    if (a.path_type !== b.path_type) return b.path_type === 'Dir' ? 1 : -1;
+                    if (a.isDir !== b.isDir) return b.isDir - a.isDir;
                     return a.name.localeCompare(b.name);
                 });
                 
                 let html = '';
                 files.forEach(file => {
-                    const isDir = file.path_type === 'Dir';
-                    const icon = getFileIcon(file.name, isDir);
-                    const filePath = currentPath === '/' ? '/' + file.name : currentPath + '/' + file.name;
-                    const downloadUrl = baseUrl + filePath;
+                    const icon = getFileIcon(file.name, file.isDir);
+                    const serverUrl = DUF_SERVERS[currentServer];
+                    const downloadUrl = serverUrl + '/' + file.path.replace(/^\//, '');
                     
-                    const sizeStr = isDir ? '文件夹' : formatSize(file.size);
-                    const clickAction = isDir 
-                        ? 'navigateTo(\'' + filePath + '/\')' 
+                    const sizeStr = file.isDir ? '文件夹' : formatSize(file.size);
+                    const clickAction = file.isDir 
+                        ? 'navigateTo(\'' + file.path + '\')' 
                         : 'window.open(\'' + downloadUrl + '\', \'_blank\')';
                     
                     html += '<div class="file-item" onclick="' + clickAction + '">';
-                    html += '<div class="file-icon ' + (isDir ? 'folder' : 'file') + '">' + icon + '</div>';
+                    html += '<div class="file-icon ' + (file.isDir ? 'folder' : 'file') + '">' + icon + '</div>';
                     html += '<div class="file-info">';
                     html += '<div class="file-name">' + file.name + '</div>';
                     html += '<div class="file-meta">' + sizeStr + '</div>';
