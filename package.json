@@ -1,0 +1,16 @@
+{
+  "name": "dufs-api",
+  "version": "1.0.0",
+  "description": "Dufs file server API proxy for EdgeOne Pages",
+  "type": "module",
+  "scripts": {
+    "dev": "edgeone pages dev",
+    "deploy": "edgeone pages deploy"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "@edgeone/cli": "latest"
+  }
+}
